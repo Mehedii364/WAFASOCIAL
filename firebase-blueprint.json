@@ -1,0 +1,409 @@
+{
+  "entities": {
+    "UserAccount": {
+      "title": "UserAccount",
+      "description": "Private user account settings and PII, strictly accessible only by the owner.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "format": "email", "description": "Owner email PII" },
+        "birthYear": { "type": "integer", "description": "Optional birth year for teen safety safeguards" },
+        "privateAccount": { "type": "boolean", "description": "Whether follow requests require approval" },
+        "allowMessagesFrom": { "type": "string", "enum": ["everyone", "following", "nobody"] },
+        "teenSafetyMode": { "type": "boolean", "description": "Additional safeguards for teenage accounts" },
+        "notifyLikes": { "type": "boolean" },
+        "notifyComments": { "type": "boolean" },
+        "notifyFollows": { "type": "boolean" },
+        "notifyMessages": { "type": "boolean" },
+        "deactivated": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp via FieldValue.serverTimestamp()" }
+      },
+      "required": ["userId", "email", "privateAccount", "allowMessagesFrom", "teenSafetyMode", "notifyLikes", "notifyComments", "notifyFollows", "notifyMessages", "deactivated", "createdAt", "updatedAt"]
+    },
+    "UserSession": {
+      "title": "UserSession",
+      "description": "Active Android device session record under owner user.",
+      "type": "object",
+      "properties": {
+        "deviceName": { "type": "string" },
+        "platform": { "type": "string" },
+        "lastActiveAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["deviceName", "platform", "lastActiveAt", "createdAt"]
+    },
+    "Bookmark": {
+      "title": "Bookmark",
+      "description": "User saved post reference.",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["postId", "createdAt"]
+    },
+    "LikedPost": {
+      "title": "LikedPost",
+      "description": "User liked post index for O(1) feed state observation.",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["postId", "createdAt"]
+    },
+    "BlockedUser": {
+      "title": "BlockedUser",
+      "description": "Blocked account record for safety filtering.",
+      "type": "object",
+      "properties": {
+        "blockedUserId": { "type": "string" },
+        "blockedName": { "type": "string" },
+        "blockedHandle": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["blockedUserId", "blockedName", "blockedHandle", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "In-app user activity notification.",
+      "type": "object",
+      "properties": {
+        "actorId": { "type": "string" },
+        "actorName": { "type": "string" },
+        "type": { "type": "string", "enum": ["like", "comment", "follow", "follow_request", "repost", "message", "community", "event", "security"] },
+        "message": { "type": "string" },
+        "targetId": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["actorId", "actorName", "type", "message", "read", "createdAt"]
+    },
+    "AiUsageLog": {
+      "title": "AiUsageLog",
+      "description": "User AI assistant usage tracking record.",
+      "type": "object",
+      "properties": {
+        "taskType": { "type": "string", "enum": ["caption", "hashtags", "improve", "summarize", "translate", "chat", "community"] },
+        "modelName": { "type": "string" },
+        "promptChars": { "type": "integer" },
+        "responseChars": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["taskType", "modelName", "promptChars", "responseChars", "createdAt"]
+    },
+    "PublicProfile": {
+      "title": "PublicProfile",
+      "description": "Publicly visible social identity without PII.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "username": { "type": "string" },
+        "bio": { "type": "string" },
+        "location": { "type": "string" },
+        "website": { "type": "string" },
+        "interests": { "type": "array" },
+        "avatarData": { "type": "string" },
+        "coverData": { "type": "string" },
+        "visibility": { "type": "string", "enum": ["public", "private"] },
+        "verified": { "type": "boolean" },
+        "followersCount": { "type": "integer" },
+        "followingCount": { "type": "integer" },
+        "postsCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "displayName", "username", "bio", "interests", "visibility", "verified", "followersCount", "followingCount", "postsCount", "createdAt", "updatedAt"]
+    },
+    "Follow": {
+      "title": "Follow",
+      "description": "Follow or pending follow request relationship.",
+      "type": "object",
+      "properties": {
+        "followerId": { "type": "string" },
+        "followingId": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "pending"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["followerId", "followingId", "status", "createdAt"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "Social feed post supporting text, photos, short-form reel cards, polls, and questions.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorHandle": { "type": "string" },
+        "authorAvatar": { "type": "string" },
+        "authorVerified": { "type": "boolean" },
+        "content": { "type": "string" },
+        "postType": { "type": "string", "enum": ["TEXT", "PHOTO", "REEL", "POLL", "QUESTION"] },
+        "mediaData": { "type": "string" },
+        "mediaAspect": { "type": "string", "enum": ["16:9", "4:3", "1:1", "9:16"] },
+        "pollOptions": { "type": "array" },
+        "pollVoteCounts": { "type": "array" },
+        "hashtags": { "type": "array" },
+        "visibility": { "type": "string", "enum": ["public", "private"] },
+        "communityId": { "type": "string" },
+        "communityName": { "type": "string" },
+        "likesCount": { "type": "integer" },
+        "commentsCount": { "type": "integer" },
+        "repostsCount": { "type": "integer" },
+        "viewsCount": { "type": "integer" },
+        "pinned": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "authorName", "authorHandle", "authorVerified", "content", "postType", "pollOptions", "pollVoteCounts", "hashtags", "visibility", "likesCount", "commentsCount", "repostsCount", "viewsCount", "pinned", "createdAt", "updatedAt"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "Comment or reply attached to a post.",
+      "type": "object",
+      "properties": {
+        "postId": { "type": "string" },
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorHandle": { "type": "string" },
+        "authorAvatar": { "type": "string" },
+        "content": { "type": "string" },
+        "parentCommentId": { "type": "string" },
+        "visibility": { "type": "string", "enum": ["public", "private"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["postId", "authorId", "authorName", "authorHandle", "content", "visibility", "createdAt"]
+    },
+    "Story": {
+      "title": "Story",
+      "description": "24-hour social story or pinned profile highlight.",
+      "type": "object",
+      "properties": {
+        "authorId": { "type": "string" },
+        "authorName": { "type": "string" },
+        "authorHandle": { "type": "string" },
+        "authorAvatar": { "type": "string" },
+        "caption": { "type": "string" },
+        "overlayText": { "type": "string" },
+        "stickerTag": { "type": "string" },
+        "mediaData": { "type": "string" },
+        "accentHex": { "type": "string" },
+        "visibility": { "type": "string", "enum": ["public", "private"] },
+        "highlighted": { "type": "boolean" },
+        "viewsCount": { "type": "integer" },
+        "reactionsCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "expiresAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["authorId", "authorName", "authorHandle", "caption", "accentHex", "visibility", "highlighted", "viewsCount", "reactionsCount", "createdAt", "expiresAt"]
+    },
+    "Conversation": {
+      "title": "Conversation",
+      "description": "Private 1-to-1 or group messaging thread.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "groupChat": { "type": "boolean" },
+        "participantIds": { "type": "array" },
+        "participantLabels": { "type": "array" },
+        "lastMessageText": { "type": "string" },
+        "lastMessageSenderId": { "type": "string" },
+        "typingUserIds": { "type": "array" },
+        "createdBy": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["groupChat", "participantIds", "participantLabels", "lastMessageText", "lastMessageSenderId", "typingUserIds", "createdBy", "createdAt", "updatedAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Individual message inside a conversation with denormalized participantIds.",
+      "type": "object",
+      "properties": {
+        "conversationId": { "type": "string" },
+        "senderId": { "type": "string" },
+        "senderName": { "type": "string" },
+        "participantIds": { "type": "array" },
+        "text": { "type": "string" },
+        "attachmentData": { "type": "string" },
+        "replyToText": { "type": "string" },
+        "reactionCode": { "type": "string" },
+        "edited": { "type": "boolean" },
+        "deleted": { "type": "boolean" },
+        "readBy": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["conversationId", "senderId", "senderName", "participantIds", "text", "edited", "deleted", "readBy", "createdAt", "updatedAt"]
+    },
+    "Community": {
+      "title": "Community",
+      "description": "Topic-based group with roles, rules, and announcements.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "visibility": { "type": "string", "enum": ["public", "private", "invite_only"] },
+        "rulesText": { "type": "string" },
+        "announcement": { "type": "string" },
+        "ownerId": { "type": "string" },
+        "ownerName": { "type": "string" },
+        "memberIds": { "type": "array" },
+        "moderatorIds": { "type": "array" },
+        "pendingMemberIds": { "type": "array" },
+        "memberCount": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "description", "category", "visibility", "rulesText", "announcement", "ownerId", "ownerName", "memberIds", "moderatorIds", "pendingMemberIds", "memberCount", "createdAt", "updatedAt"]
+    },
+    "SocialEvent": {
+      "title": "SocialEvent",
+      "description": "Community event or scheduled live session.",
+      "type": "object",
+      "properties": {
+        "hostId": { "type": "string" },
+        "hostName": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "eventType": { "type": "string", "enum": ["EVENT", "LIVE_SCHEDULED"] },
+        "locationOrLink": { "type": "string" },
+        "startTimeText": { "type": "string" },
+        "visibility": { "type": "string", "enum": ["public", "private"] },
+        "rsvpGoingIds": { "type": "array" },
+        "rsvpInterestedIds": { "type": "array" },
+        "streamProviderNote": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["hostId", "hostName", "title", "description", "eventType", "locationOrLink", "startTimeText", "visibility", "rsvpGoingIds", "rsvpInterestedIds", "createdAt", "updatedAt"]
+    },
+    "Report": {
+      "title": "Report",
+      "description": "Safety report submitted for moderation review.",
+      "type": "object",
+      "properties": {
+        "reporterId": { "type": "string" },
+        "targetType": { "type": "string", "enum": ["post", "profile", "message", "community"] },
+        "targetId": { "type": "string" },
+        "reason": { "type": "string" },
+        "details": { "type": "string" },
+        "status": { "type": "string", "enum": ["open", "reviewed", "resolved", "dismissed"] },
+        "resolutionNote": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["reporterId", "targetType", "targetId", "reason", "details", "status", "createdAt", "updatedAt"]
+    },
+    "VerificationRequest": {
+      "title": "VerificationRequest",
+      "description": "Creator or identity verification request.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "username": { "type": "string" },
+        "category": { "type": "string" },
+        "reason": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "username", "category", "reason", "status", "createdAt", "updatedAt"]
+    },
+    "AdminAuditLog": {
+      "title": "AdminAuditLog",
+      "description": "Immutable administrative action audit entry.",
+      "type": "object",
+      "properties": {
+        "adminId": { "type": "string" },
+        "adminEmail": { "type": "string" },
+        "action": { "type": "string" },
+        "targetPath": { "type": "string" },
+        "summary": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["adminId", "adminEmail", "action", "targetPath", "summary", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserAccount" },
+      "description": "Owner-only private user account settings and PII."
+    },
+    "/users/{userId}/sessions/{sessionId}": {
+      "schema": { "$ref": "#/entities/UserSession" },
+      "description": "Owner-only active device session logs."
+    },
+    "/users/{userId}/bookmarks/{postId}": {
+      "schema": { "$ref": "#/entities/Bookmark" },
+      "description": "Owner-only bookmarked posts."
+    },
+    "/users/{userId}/liked_posts/{postId}": {
+      "schema": { "$ref": "#/entities/LikedPost" },
+      "description": "Owner-only liked post index."
+    },
+    "/users/{userId}/blocked/{blockedUserId}": {
+      "schema": { "$ref": "#/entities/BlockedUser" },
+      "description": "Owner-only blocked user list."
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "Owner notifications created by other actors or security events."
+    },
+    "/users/{userId}/ai_usage/{logId}": {
+      "schema": { "$ref": "#/entities/AiUsageLog" },
+      "description": "Owner-only AI assistant usage logs."
+    },
+    "/public_profiles/{userId}": {
+      "schema": { "$ref": "#/entities/PublicProfile" },
+      "description": "Public social profiles isolated from PII."
+    },
+    "/follows/{followId}": {
+      "schema": { "$ref": "#/entities/Follow" },
+      "description": "Follow relationships and private account follow requests."
+    },
+    "/posts/{postId}": {
+      "schema": { "$ref": "#/entities/Post" },
+      "description": "Social posts across Home, Explore, Reels, and Communities."
+    },
+    "/posts/{postId}/comments/{commentId}": {
+      "schema": { "$ref": "#/entities/Comment" },
+      "description": "Comments and threaded replies on a post."
+    },
+    "/stories/{storyId}": {
+      "schema": { "$ref": "#/entities/Story" },
+      "description": "24-hour expiring stories and profile highlights."
+    },
+    "/conversations/{conversationId}": {
+      "schema": { "$ref": "#/entities/Conversation" },
+      "description": "Direct and group messaging conversations."
+    },
+    "/conversations/{conversationId}/messages/{messageId}": {
+      "schema": { "$ref": "#/entities/Message" },
+      "description": "Conversation messages with denormalized participant membership."
+    },
+    "/communities/{communityId}": {
+      "schema": { "$ref": "#/entities/Community" },
+      "description": "Public, private, and invite-only communities."
+    },
+    "/events/{eventId}": {
+      "schema": { "$ref": "#/entities/SocialEvent" },
+      "description": "Events and scheduled live sessions."
+    },
+    "/reports/{reportId}": {
+      "schema": { "$ref": "#/entities/Report" },
+      "description": "Content and user safety reports."
+    },
+    "/verification_requests/{requestId}": {
+      "schema": { "$ref": "#/entities/VerificationRequest" },
+      "description": "Profile verification applications."
+    },
+    "/admin_audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AdminAuditLog" },
+      "description": "Immutable admin action audit trail."
+    }
+  }
+}
